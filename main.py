@@ -1,4 +1,4 @@
-from carla_mcp.server import server_main
+from server import main as server_main
 
 def main():
     """Entry point for the carla-mcp package"""

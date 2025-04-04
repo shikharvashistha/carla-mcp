@@ -1,4 +1,3 @@
-# carla_mcp_server.py
 from mcp.server.fastmcp import FastMCP, Context
 
 import logging
@@ -9,6 +8,7 @@ import carla
 
 logging.basicConfig(level=logging.INFO, 
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
 logger = logging.getLogger("CarlaMCPServer")
 
 @dataclass
@@ -148,20 +148,20 @@ class CarlaConnection:
 @asynccontextmanager
 async def server_lifespan(server: FastMCP) -> AsyncIterator[Dict[str, Any]]:
     """Lifespan context manager for the FastMCP server."""
-    logger.info("Starting FastMCP server")
     try:
-        carla = get_carla_connection()
-        logger.info("Sucessfully connected to Carla server")
-        yield {"carla": carla}
-    except Exception as e:
-        logger.error(f"Failed to connect to Carla server: {e}")
-        raise
+        logger.info("Starting FastMCP server")
+        try:
+            carla = get_carla_connection()
+            logger.info("Sucessfully connected to Carla server")
+        except Exception as e:
+            logger.error(f"Failed to connect to Carla server: {e}")
+        yield {}
     finally:
-        global _carla_connection
-        if _carla_connection:
-            logger.info("Disconnecting from Carla on shutdown")
-            _carla_connection.disconnect()
-        logger.info("CarlaMCP server shut down")
+            global _carla_connection
+            if _carla_connection:
+                logger.info("Disconnecting from Carla on shutdown")
+                _carla_connection.disconnect()
+            logger.info("CarlaMCP server shut down")
 
 
 mcp = FastMCP(
@@ -172,8 +172,7 @@ mcp = FastMCP(
 
 _carla_connection = None
 
-
-def get_carla_connection(ctx: Context) -> CarlaConnection:
+def get_carla_connection():
     """Get a connection to the Carla server."""
     global _carla_connection
     if _carla_connection is None:
@@ -194,8 +193,8 @@ def get_carla_connection(ctx: Context) -> CarlaConnection:
     return _carla_connection
 
 
-@mcp.tool
-def destroy_all_actors(ctx: Context) -> None:
+@mcp.tool()
+def destroy_all_actors(ctx: Context) -> bool:
     """Destroy all actors in the Carla world."""
     logger.info("Destroying all actors")
     try:
@@ -207,7 +206,7 @@ def destroy_all_actors(ctx: Context) -> None:
         raise
     return True
 
-@mcp.tool
+@mcp.tool()
 def get_map_name(ctx: Context) -> str:
     """Get the name of the current map."""
     logger.info("Getting map name")
@@ -220,7 +219,7 @@ def get_map_name(ctx: Context) -> str:
         raise
     return map_name
 
-@mcp.tool
+@mcp.tool()
 def get_blueprints() -> List[str]:
     """Get the list of available blueprints."""
     logger.info("Getting blueprints")
@@ -232,7 +231,6 @@ def get_blueprints() -> List[str]:
         logger.error(f"Failed to get blueprints: {e}")
         raise
     return blueprints
-
 
 
 def main():
